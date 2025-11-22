@@ -21,8 +21,8 @@ public final class UIHazeEffectView<Provider>: UIView where Provider: MaskProvid
     /// Lower values may reduce quality but can improve performance.
     public private(set) var scale: CGFloat
 
-    private var frameObserver: NSObjectProtocol?
-    private var needsToRedrawMask: Bool = false
+    private var lastFrame: CGRect = .zero
+    private var needsToRedrawMask: Bool = true
 
     private let ciContext: CIContext = if let device = MTLCreateSystemDefaultDevice() {
         .init(mtlDevice: device, options: [.cacheIntermediates: true])
@@ -60,17 +60,13 @@ public final class UIHazeEffectView<Provider>: UIView where Provider: MaskProvid
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        MainActor.assumeIsolated {
-            if let frameObserver {
-                NotificationCenter.default.removeObserver(frameObserver)
-            }
-        }
-    }
-
     /// Updates the mask provider and autmatically triggers a re-render of the mask.
     /// - Parameter provider: The new mask provider used by this variable blur.
     public func setMaskProvider(to maskProvider: Provider) {
+        guard self.maskProvider != maskProvider else {
+            return
+        }
+
         self.maskProvider = maskProvider
         needsToRedrawMask = true
     }
@@ -78,6 +74,10 @@ public final class UIHazeEffectView<Provider>: UIView where Provider: MaskProvid
     /// Updates the mask's scale and autmatically triggers a re-render of the mask.
     /// - Parameter scale: The new scale factor at which the mask is applied to the variable blur.
     public func setScale(to scale: CGFloat) {
+        guard self.scale != scale else {
+            return
+        }
+
         self.scale = scale
         needsToRedrawMask = true
     }
@@ -88,7 +88,7 @@ public final class UIHazeEffectView<Provider>: UIView where Provider: MaskProvid
             return
         }
 
-        if needsToRedrawMask {
+        if needsToRedrawMask || lastFrame != bounds {
             let backing = window?.contentScaleFactor ?? 2.0
             let scale = max(0.25, min(2.0, backing * scale))
 
@@ -99,6 +99,9 @@ public final class UIHazeEffectView<Provider>: UIView where Provider: MaskProvid
             ) {
                 variableBlur.setMaskImage(to: image)
             }
+            
+            needsToRedrawMask = false
+            lastFrame = bounds
         }
 
         // Applies filter
