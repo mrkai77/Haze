@@ -84,7 +84,7 @@ public final class UIHazeEffectView<Provider>: UIView where Provider: MaskProvid
 
     /// Re-renders the current mask and applies it to the variable blur effect.
     func renderFilter() {
-        guard let filter = variableBlur.filter else {
+        guard let filter = variableBlur.filter, bounds != .zero else {
             return
         }
 
@@ -99,7 +99,7 @@ public final class UIHazeEffectView<Provider>: UIView where Provider: MaskProvid
             ) {
                 variableBlur.setMaskImage(to: image)
             }
-            
+
             needsToRedrawMask = false
             lastFrame = bounds
         }

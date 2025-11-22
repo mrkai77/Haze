@@ -21,7 +21,6 @@ public final class NSHazeEffectView<Provider>: NSView where Provider: MaskProvid
     /// Lower values may reduce quality but can improve performance.
     public private(set) var scale: CGFloat
 
-    private var frameObserver: NSObjectProtocol?
     private var lastFrame: CGRect = .zero
     private var needsToRedrawMask: Bool = true
 
@@ -50,7 +49,6 @@ public final class NSHazeEffectView<Provider>: NSView where Provider: MaskProvid
         super.init(frame: frame)
 
         setup()
-        listenToFrameChanges()
     }
 
     @available(*, unavailable)
@@ -58,12 +56,9 @@ public final class NSHazeEffectView<Provider>: NSView where Provider: MaskProvid
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        MainActor.assumeIsolated {
-            if let frameObserver {
-                NotificationCenter.default.removeObserver(frameObserver)
-            }
-        }
+    override public func layout() {
+        super.layout()
+        renderFilter()
     }
 
     /// Updates the mask provider and autmatically triggers a re-render of the mask.
@@ -90,7 +85,7 @@ public final class NSHazeEffectView<Provider>: NSView where Provider: MaskProvid
 
     /// Re-renders the current mask and applies it to the variable blur effect.
     func renderFilter() {
-        guard let filter = variableBlur.filter else {
+        guard let filter = variableBlur.filter, bounds != .zero else {
             return
         }
 
@@ -105,7 +100,7 @@ public final class NSHazeEffectView<Provider>: NSView where Provider: MaskProvid
             ) {
                 variableBlur.setMaskImage(to: image)
             }
-            
+
             needsToRedrawMask = false
             lastFrame = bounds
         }
@@ -124,21 +119,9 @@ public final class NSHazeEffectView<Provider>: NSView where Provider: MaskProvid
 
         wantsLayer = true
         layer = backdropLayer
+        layer?.masksToBounds = true
 
         renderFilter()
-    }
-
-    private func listenToFrameChanges() {
-        postsFrameChangedNotifications = true
-        frameObserver = NotificationCenter.default.addObserver(
-            forName: NSView.frameDidChangeNotification,
-            object: self,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.renderFilter()
-            }
-        }
     }
 
     private func makeBackdropLayer() -> CALayer? {
