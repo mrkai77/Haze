@@ -19,8 +19,8 @@ public struct ImageMaskProvider: MaskProvider {
     public typealias SystemImage = NSImage
     #endif
 
-    /// The image to be used as the mask.
-    public let image: SystemImage
+    /// The CGImage backing the mask image.
+    public let cgImage: CGImage
 
     /// The content mode applied to the image when rendering.
     public let contentMode: ContentMode
@@ -55,23 +55,23 @@ public struct ImageMaskProvider: MaskProvider {
         contentMode: ContentMode = .fill,
         useGrayscaleAsAlpha: Bool = false
     ) {
-        self.image = image
+        #if os(iOS)
+        guard let cgImage = image.cgImage else {
+            preconditionFailure()
+        }
+        #else
+        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            preconditionFailure()
+        }
+        #endif
+
+        self.cgImage = cgImage
         self.contentMode = contentMode
         self.useGrayscaleAsAlpha = useGrayscaleAsAlpha
     }
 
     public func draw(in bounds: CGRect, scale: CGFloat, in ciContext: CIContext) -> CGImage? {
         autoreleasepool {
-            #if os(iOS)
-            guard let cgImage = image.cgImage else {
-                return nil
-            }
-            #else
-            guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-                return nil
-            }
-            #endif
-
             let totalExtent = CGRect(
                 x: 0,
                 y: 0,
