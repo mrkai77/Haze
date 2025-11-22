@@ -46,7 +46,7 @@ public final class VariableBlurEngine {
     }
 
     /// Updates the mask image of the variable blur effect and automatically triggers a re-render of the associated view.
-    /// - Parameter radius: The image to use as the mask for this variable blur effect.
+    /// - Parameter image: The image to use as the mask for this variable blur effect.
     public func setMaskImage(to image: CGImage) {
         guard maskImage != image else { return }
         filter?.setValue(image, forKey: "inputMaskImage")

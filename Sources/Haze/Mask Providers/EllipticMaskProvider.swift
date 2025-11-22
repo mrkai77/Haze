@@ -9,6 +9,9 @@ import CoreImage.CIFilterBuiltins
 import SwiftUI
 
 /// A blurred, elliptic mask used for variable blur effects.
+///
+/// ![Elliptic Mask](elliptic_mask)
+///
 public struct EllipticMaskProvider: MaskProvider {
     /// The radius of the Gaussian blur applied to the ellipse.
     public let blurRadius: CGFloat

@@ -9,6 +9,9 @@ import CoreImage
 import SwiftUI
 
 /// A linear gradient mask used for variable blur effects.
+///
+/// ![Linear Gradient Mask](linear_gradient_mask)
+///
 public struct LinearGradientMaskProvider: MaskProvider {
     /// The starting point of the linear gradient.
     public let startPoint: UnitPoint

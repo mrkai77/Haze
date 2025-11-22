@@ -8,14 +8,17 @@
 import CoreImage
 import SwiftUI
 
-#if os(iOS)
-public typealias SystemImage = UIImage
-#else
-public typealias SystemImage = NSImage
-#endif
-
 /// A mask that enables the usage of images as masks for variable blur effects.
+///
+/// ![Image Mask](image_mask)
+///
 public struct ImageMaskProvider: MaskProvider {
+    #if os(iOS)
+    public typealias SystemImage = UIImage
+    #else
+    public typealias SystemImage = NSImage
+    #endif
+
     /// The image to be used as the mask.
     public let image: SystemImage
 

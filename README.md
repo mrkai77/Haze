@@ -25,7 +25,7 @@ Creating these masks from scratch can be complex, so Haze includes several ready
 
 ### Linear Gradient Mask
 
-<img src="assets/linear_gradient_mask.png" alt="Linear Gradient Mask" width="300"/>
+<img src="Sources/Haze/Documentation.docc/Resources/linear_gradient_mask.png" alt="Linear Gradient Mask" width="300"/>
 
 ```swift
 SomeView()
@@ -44,7 +44,7 @@ SomeView()
 
 ### Rounded Rectangle Mask
 
-<img src="assets/rounded_rectangle_mask.png" alt="Rounded Rectangle Mask" width="300"/>
+<img src="Sources/Haze/Documentation.docc/Resources/rounded_rectangle_mask.png" alt="Rounded Rectangle Mask" width="300"/>
 
 ```swift
 SomeView()
@@ -61,7 +61,7 @@ SomeView()
 
 You can choose which edges to feather/transition. For example, to blur everything except the top edge:
 
-<img src="assets/rounded_rectangle_no_top_edge_mask.png" alt="Rounded Rectangle Mask (no top edge)" width="300"/>
+<img src="Sources/Haze/Documentation.docc/Resources/rounded_rectangle_no_top_edge_mask.png" alt="Rounded Rectangle Mask (no top edge)" width="300"/>
 
 ```swift
 SomeView()
@@ -79,7 +79,7 @@ SomeView()
 
 To blur the outer edges instead of the inside, invert the mask:
 
-<img src="assets/rounded_rectangle_inverted_mask.png" alt="Rounded Rectangle Mask (inverted)" width="300"/>
+<img src="Sources/Haze/Documentation.docc/Resources/rounded_rectangle_inverted_mask.png" alt="Rounded Rectangle Mask (inverted)" width="300"/>
 
 ```swift
 SomeView()
@@ -97,7 +97,7 @@ SomeView()
 
 ### Elliptic Mask
 
-<img src="assets/elliptic_mask.png" alt="Elliptic Mask" width="300"/>
+<img src="Sources/Haze/Documentation.docc/Resources/elliptic_mask.png" alt="Elliptic Mask" width="300"/>
 
 ```swift
 SomeView()
@@ -113,7 +113,7 @@ SomeView()
 
 ### Image Mask
 
-<img src="assets/image_mask.png" alt="Image Mask" width="300"/>
+<img src="Sources/Haze/Documentation.docc/Resources/image_mask.png" alt="Image Mask" width="300"/>
 
 ```swift
 SomeView()

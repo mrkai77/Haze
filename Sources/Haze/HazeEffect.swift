@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// A protocol to ensure that both the iOS/macOS versions of `HazeEffect` provide the same API.
 @MainActor
 public protocol HazeEffectProtocol {
     associatedtype Provider: MaskProvider
@@ -24,7 +25,7 @@ public protocol HazeEffectProtocol {
 }
 
 #if os(iOS)
-/// A SwiftUI API for `HazeEffectView`.
+/// A SwiftUI API for `UIHazeEffectView`.
 @MainActor
 public struct HazeEffect<Provider>: UIViewRepresentable, HazeEffectProtocol where Provider: MaskProvider {
     /// The type of mask to use for the variable blur effect.
@@ -49,8 +50,8 @@ public struct HazeEffect<Provider>: UIViewRepresentable, HazeEffectProtocol wher
 
     public func makeUIView(
         context _: Context
-    ) -> HazeEffectView<Provider> {
-        let view = HazeEffectView(
+    ) -> UIHazeEffectView<Provider> {
+        let view = UIHazeEffectView(
             maskProvider: maskProvider,
             variableBlur: VariableBlurEngine(maxBlurRadius: maxBlurRadius),
             scale: scale
@@ -59,7 +60,7 @@ public struct HazeEffect<Provider>: UIViewRepresentable, HazeEffectProtocol wher
     }
 
     public func updateUIView(
-        _ view: HazeEffectView<Provider>,
+        _ view: UIHazeEffectView<Provider>,
         context _: Context
     ) {
         view.setMaskProvider(to: maskProvider)
@@ -69,7 +70,7 @@ public struct HazeEffect<Provider>: UIViewRepresentable, HazeEffectProtocol wher
     }
 }
 #else
-/// A SwiftUI API for `HazeEffectView`.
+/// A SwiftUI API for `NSHazeEffectView`.
 public struct HazeEffect<Provider>: NSViewRepresentable, HazeEffectProtocol where Provider: MaskProvider {
     /// The type of mask to use for the variable blur effect.
     private let maskProvider: Provider
@@ -93,8 +94,8 @@ public struct HazeEffect<Provider>: NSViewRepresentable, HazeEffectProtocol wher
 
     public func makeNSView(
         context _: Context
-    ) -> HazeEffectView<Provider> {
-        let view = HazeEffectView(
+    ) -> NSHazeEffectView<Provider> {
+        let view = NSHazeEffectView(
             maskProvider: maskProvider,
             variableBlur: VariableBlurEngine(maxBlurRadius: maxBlurRadius),
             scale: scale
@@ -103,7 +104,7 @@ public struct HazeEffect<Provider>: NSViewRepresentable, HazeEffectProtocol wher
     }
 
     public func updateNSView(
-        _ view: HazeEffectView<Provider>,
+        _ view: NSHazeEffectView<Provider>,
         context _: Context
     ) {
         view.setMaskProvider(to: maskProvider)

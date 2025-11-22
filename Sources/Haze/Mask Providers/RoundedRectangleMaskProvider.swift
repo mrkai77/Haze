@@ -9,6 +9,9 @@ import CoreImage
 import SwiftUI
 
 /// A blurred, rounded rectangle mask used for variable blur effects.
+///
+/// ![Rounded Rectangle Mask](rounded_rectangle_mask)
+///
 public struct RoundedRectangleMaskProvider: MaskProvider {
     /// The radius of the corners for the rounded rectangle mask.
     public let cornerRadius: CGFloat
