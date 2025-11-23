@@ -131,6 +131,31 @@ SomeView()
 By default, ImageMaskProvider uses the alpha channel of the image as the mask.
 If you prefer to use a grayscale spectrum (e.g. a heightmap‑style mask), set: `useGrayscaleAsAlpha: true`.
 
+### SwiftUI.Shape Mask
+
+```swift
+let maskBlurRadius: CGFloat = 10
+
+SomeView()
+    .overlay {
+        HazeEffect(
+            maskProvider: ShapeMaskProvider(
+                shape: CustomShape(),
+                blurRadius: maskBlurRadius
+            ),
+            maxBlurRadius: 5
+        )
+        .padding(-maskBlurRadius * 2)
+    }
+```
+
+Note that the shape you provide must conform to Equatable.
+
+Also, be aware that the shape is automatically inset based on the `blurRadius` you pass to `ShapeMaskProvider`.
+This prevents the blur from being clipped at the edges.
+To counteract the inset, you should add negative padding to the HazeEffect, as shown above. 
+The padding is multiplied by 2 because a Gaussian blur can extend slightly beyond the specified radius.
+
 ## License
 
 Haze is released under **Apache-2.0 license** See the [LICENSE](LICENSE) file in the repository for the full license.
