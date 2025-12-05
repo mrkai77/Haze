@@ -121,35 +121,36 @@ public final class HazeEffectView<Provider>: PlatformView where Provider: MaskPr
 
     /// Re-renders the current mask and applies it to the variable blur effect.
     func renderFilter() {
-        guard let filter = variableBlur.filter, bounds != .zero else {
+        guard
+            let filter = variableBlur.filter,
+            bounds != .zero,
+            needsToRedrawMask || lastFrame != bounds
+        else {
             return
         }
 
-        #if os(macOS)
+        #if os(iOS)
+        let backing = window?.contentScaleFactor ?? 2.0
+        #elseif os(macOS)
         guard let layer else {
             return
         }
+
+        let backing = window?.backingScaleFactor ?? 2.0
         #endif
 
-        if needsToRedrawMask || lastFrame != bounds {
-            #if os(iOS)
-            let backing = window?.contentScaleFactor ?? 2.0
-            #elseif os(macOS)
-            let backing = window?.backingScaleFactor ?? 2.0
-            #endif
-            let scale = max(0.25, min(2.0, backing * scale))
+        let scale = max(0.25, min(2.0, backing * scale))
 
-            if let image = maskProvider.draw(
-                in: bounds,
-                scale: scale,
-                in: ciContext
-            ) {
-                variableBlur.setMaskImage(to: image)
-            }
-
-            needsToRedrawMask = false
-            lastFrame = bounds
+        if let image = maskProvider.draw(
+            in: bounds,
+            scale: scale,
+            in: ciContext
+        ) {
+            variableBlur.setMaskImage(to: image)
         }
+
+        needsToRedrawMask = false
+        lastFrame = bounds
 
         // Applies filter
         layer.filters = []
