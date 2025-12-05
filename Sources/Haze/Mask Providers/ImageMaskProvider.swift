@@ -8,17 +8,17 @@
 import CoreImage
 import SwiftUI
 
+#if os(iOS)
+public typealias PlatformImage = UIImage
+#elseif os(macOS)
+public typealias PlatformImage = NSImage
+#endif
+
 /// A mask that enables the usage of images as masks for variable blur effects.
 ///
 /// ![Image Mask](image_mask)
 ///
 public struct ImageMaskProvider: MaskProvider {
-    #if os(iOS)
-    public typealias SystemImage = UIImage
-    #else
-    public typealias SystemImage = NSImage
-    #endif
-
     /// The CGImage backing the mask image.
     public let cgImage: CGImage
 
@@ -51,7 +51,7 @@ public struct ImageMaskProvider: MaskProvider {
     ///   - contentMode: The content mode applied to the image when rendering.
     ///   - useGrayscaleAsAlpha: Pass `false` to use the alpha channel, or `true` to treat white pixels as fully transparent.
     public init(
-        image: SystemImage,
+        image: PlatformImage,
         contentMode: ContentMode = .fill,
         useGrayscaleAsAlpha: Bool = false
     ) {
@@ -59,7 +59,7 @@ public struct ImageMaskProvider: MaskProvider {
         guard let cgImage = image.cgImage else {
             preconditionFailure()
         }
-        #else
+        #elseif os(macOS)
         guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             preconditionFailure()
         }
