@@ -161,6 +161,7 @@ public struct RoundedRectangleMaskProvider: MaskProvider {
             bottom: bottom,
             leading: leading,
             trailing: trailing,
+            insetFactor: insetFactor,
             totalExtent: totalExtent,
             scale: scale
         )
@@ -211,9 +212,11 @@ public struct RoundedRectangleMaskProvider: MaskProvider {
         bottom: EdgeConfiguration,
         leading: EdgeConfiguration,
         trailing: EdgeConfiguration,
+        insetFactor: CGFloat,
         totalExtent: CGRect,
         scale: CGFloat
     ) -> (top: CGFloat, bottom: CGFloat, leading: CGFloat, trailing: CGFloat) {
+        let insetFactorCompensation = insetFactor / 2
         var topPadding: CGFloat = 0
         var bottomPadding: CGFloat = 0
         var leadingPadding: CGFloat = 0
@@ -221,33 +224,38 @@ public struct RoundedRectangleMaskProvider: MaskProvider {
 
         switch top.padding {
         case let .points(points):
-            topPadding = points * scale
+            topPadding = (points * scale) - insetFactorCompensation
         case let .percentage(percentage):
-            topPadding = totalExtent.height * percentage * scale
+            topPadding = (totalExtent.height * percentage * scale) - insetFactorCompensation
         }
 
         switch bottom.padding {
         case let .points(points):
-            bottomPadding = points * scale
+            bottomPadding = (points * scale) - insetFactorCompensation
         case let .percentage(percentage):
-            bottomPadding = totalExtent.height * percentage * scale
+            bottomPadding = (totalExtent.height * percentage * scale) - insetFactorCompensation
         }
 
         switch leading.padding {
         case let .points(points):
-            leadingPadding = points * scale
+            leadingPadding = (points * scale) - insetFactorCompensation
         case let .percentage(percentage):
-            leadingPadding = totalExtent.width * percentage * scale
+            leadingPadding = (totalExtent.width * percentage * scale) - insetFactorCompensation
         }
 
         switch trailing.padding {
         case let .points(points):
-            trailingPadding = points * scale
+            trailingPadding = (points * scale) - insetFactorCompensation
         case let .percentage(percentage):
-            trailingPadding = totalExtent.width * percentage * scale
+            trailingPadding = (totalExtent.width * percentage * scale) - insetFactorCompensation
         }
 
-        return (topPadding, bottomPadding, leadingPadding, trailingPadding)
+        return (
+            max(0, topPadding),
+            max(0, bottomPadding),
+            max(0, leadingPadding),
+            max(0, trailingPadding)
+        )
     }
 
     private func invertAlpha(_ image: CIImage) -> CIImage? {

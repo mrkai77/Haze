@@ -119,7 +119,7 @@ private struct GridView: View {
         }
 }
 
-#Preview("Rounded Rectangle Mask (Inverted Alpha)") {
+#Preview("Rounded Rectangle Mask (Inverted Alpha & padding)") {
     GridView()
         .frame(width: 400, height: 400)
         .overlay {
@@ -127,7 +127,12 @@ private struct GridView: View {
                 maskProvider: RoundedRectangleMaskProvider(
                     cornerRadius: 48,
                     blurRadius: 12,
-                    featherEdges: .all,
+                    edgeConfigurations: [
+                        .top: .init(feathered: true, padding: .percentage(0.25)),
+                        .bottom: .init(feathered: true, padding: .percentage(0.25)),
+                        .leading: .init(feathered: true),
+                        .trailing: .init(feathered: true)
+                    ],
                     invertAlpha: true
                 ),
                 maxBlurRadius: 3
