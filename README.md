@@ -149,9 +149,7 @@ SomeView()
     }
 ```
 
-Note that the shape you provide must conform to Equatable.
-
-Also, be aware that the shape is automatically inset based on the `blurRadius` you pass to `ShapeMaskProvider`.
+Be aware that the shape is automatically inset based on the `blurRadius` you pass to `ShapeMaskProvider`.
 This prevents the blur from being clipped at the edges.
 To counteract the inset, you should add negative padding to the HazeEffect, as shown above. 
 The padding is multiplied by 2 because a Gaussian blur can extend slightly beyond the specified radius.

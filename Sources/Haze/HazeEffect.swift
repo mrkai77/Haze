@@ -16,14 +16,14 @@ public typealias PlatformViewRepresentable = NSViewRepresentable
 public struct HazeEffect<Provider>: PlatformViewRepresentable where Provider: MaskProvider {
     /// The type of mask to use for the variable blur effect.
     private let maskProvider: Provider
-    
+
     /// The maximum blur radius to apply.
     private let maxBlurRadius: CGFloat
-    
+
     /// The scale factor used when rendering the mask image.
     /// Lower values can improve performance at the cost of quality.
     private let scale: CGFloat
-    
+
     /// Initializes a new `HazeEffect`.
     /// - Parameters:
     ///   - maskProvider: The type of mask to use for the variable blur effect.
@@ -38,15 +38,15 @@ public struct HazeEffect<Provider>: PlatformViewRepresentable where Provider: Ma
         self.maxBlurRadius = maxBlurRadius
         self.scale = scale
     }
-    
-#if os(iOS)
+
+    #if os(iOS)
     public func makeUIView(context _: Context) -> HazeEffectView<Provider> { makeView() }
     public func updateUIView(_ view: HazeEffectView<Provider>, context: Context) { updateView(view, context) }
-#elseif os(macOS)
+    #elseif os(macOS)
     public func makeNSView(context _: Context) -> HazeEffectView<Provider> { makeView() }
     public func updateNSView(_ view: HazeEffectView<Provider>, context: Context) { updateView(view, context) }
-#endif
-    
+    #endif
+
     private func makeView() -> HazeEffectView<Provider> {
         HazeEffectView(
             maskProvider: maskProvider,
@@ -54,8 +54,8 @@ public struct HazeEffect<Provider>: PlatformViewRepresentable where Provider: Ma
             scale: scale
         )
     }
-    
-    private func updateView(_ view: HazeEffectView<Provider>, _ context: Context) {
+
+    private func updateView(_ view: HazeEffectView<Provider>, _: Context) {
         view.setMaskProvider(to: maskProvider)
         view.variableBlur.setMaxBlurRadius(to: maxBlurRadius)
         view.setScale(to: scale)

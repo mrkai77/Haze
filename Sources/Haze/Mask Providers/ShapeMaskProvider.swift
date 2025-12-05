@@ -8,24 +8,42 @@
 import CoreImage.CIFilterBuiltins
 import SwiftUI
 
-// TODO: somehow put this in ShapeMaskProvider without breaking Equatable, but also only initalize once
-@MainActor
-private let blurFilter: (CIFilter & CIGaussianBlur) = CIFilter.gaussianBlur()
+/// A custom AnyShape backport as it is not available on iOS 15.
+public struct AnyShapeBackport: Shape, Equatable {
+    public let id: UUID = .init()
+    private let _pathIn: @Sendable (CGRect) -> Path
+
+    init(_ shape: some Shape) {
+        self._pathIn = { rect in
+            shape.path(in: rect)
+        }
+    }
+
+    public func path(in rect: CGRect) -> Path {
+        _pathIn(rect)
+    }
+
+    public static func == (lhs: AnyShapeBackport, rhs: AnyShapeBackport) -> Bool {
+        lhs.id == rhs.id
+    }
+}
 
 /// A blurred shape-based mask used for variable blur effects.
-public struct ShapeMaskProvider<S>: MaskProvider where S: Shape & Equatable {
+public struct ShapeMaskProvider: MaskProvider {
     /// The SwiftUI shape used to form the mask.
-    public let shape: S
+    public let shape: AnyShapeBackport
 
     /// The radius of the Gaussian blur applied to the shape.
     public let blurRadius: CGFloat
+
+    private static let blurFilter: (CIFilter & CIGaussianBlur) = CIFilter.gaussianBlur()
 
     /// Initializes a new `ShapeMaskProvider`.
     /// - Parameters:
     ///   - shape: The SwiftUI shape used to form the mask.
     ///   - blurRadius: The radius of the Gaussian blur applied to the shape.
-    public init(shape: S, blurRadius: CGFloat) {
-        self.shape = shape
+    public init(shape: some Shape, blurRadius: CGFloat) {
+        self.shape = AnyShapeBackport(shape)
         self.blurRadius = blurRadius
     }
 
@@ -88,11 +106,11 @@ public struct ShapeMaskProvider<S>: MaskProvider where S: Shape & Equatable {
 
             let ciMask = CIImage(cgImage: image)
 
-            blurFilter.setDefaults()
-            blurFilter.inputImage = ciMask
-            blurFilter.radius = Float(blurRadius * scale)
+            Self.blurFilter.setDefaults()
+            Self.blurFilter.inputImage = ciMask
+            Self.blurFilter.radius = Float(blurRadius * scale)
 
-            guard let blurred = blurFilter.outputImage else {
+            guard let blurred = Self.blurFilter.outputImage else {
                 return nil
             }
 
