@@ -92,7 +92,7 @@ public struct RoundedRectangleMaskProvider: MaskProvider {
 
     public func draw(in bounds: CGRect, scale: CGFloat, in ciContext: CIContext) -> CGImage? {
         autoreleasepool {
-            let scaledCornerRadius = max(0, cornerRadius * scale)
+            let scaledCornerRadius = max(1, cornerRadius * scale)
             let scaledBlurRadius = max(0, blurRadius * scale)
 
             let totalExtent = CGRect(
