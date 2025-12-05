@@ -19,8 +19,25 @@ public struct RoundedRectangleMaskProvider: MaskProvider {
     /// The radius of the Gaussian blur applied to the rounded rectangle.
     public let blurRadius: CGFloat
 
-    /// The edges to which the blur is applied. Unlisted edges remain sharp.
-    public let featherEdges: Edge.Set
+    /// Per-edge configuration for padding and feather visibility.
+    public let edgeConfigurations: [Edge: EdgeConfiguration]
+
+    public struct EdgeConfiguration: Sendable, Equatable {
+        public let isFeathered: Bool
+        public let padding: PaddingUnit
+
+        public enum PaddingUnit: Equatable, Sendable {
+            case points(CGFloat)
+            case percentage(CGFloat)
+        }
+
+        public init(feathered: Bool, padding: PaddingUnit = .points(0)) {
+            self.isFeathered = feathered
+            self.padding = padding
+        }
+
+        static let `default`: Self = .init(feathered: false)
+    }
 
     /// Whether the alpha channel should be inverted, such that the rounded rectangle is clear and the edges are blurred.
     public let invertAlpha: Bool
@@ -40,9 +57,36 @@ public struct RoundedRectangleMaskProvider: MaskProvider {
         featherEdges: Edge.Set = .all,
         invertAlpha: Bool = false
     ) {
+        var result = [Edge: EdgeConfiguration]()
+        if featherEdges.contains(.top) { result[.top] = .init(feathered: true) }
+        if featherEdges.contains(.bottom) { result[.bottom] = .init(feathered: true) }
+        if featherEdges.contains(.leading) { result[.leading] = .init(feathered: true) }
+        if featherEdges.contains(.trailing) { result[.trailing] = .init(feathered: true) }
+
+        self.init(
+            cornerRadius: cornerRadius,
+            blurRadius: blurRadius,
+            edgeConfigurations: result,
+            invertAlpha: invertAlpha
+        )
+    }
+
+    /// Initializes a new `RoundedRectangleMaskProvider`.
+    /// - Parameters:
+    ///   - cornerRadius: The radius of the corners for the rounded rectangle mask.
+    ///   - blurRadius: The radius of the Gaussian blur applied to the rounded rectangle.
+    ///   - edgeConfigurations: Per-edge padding and feather visibility. Missing edges use defaults (feathered: true, padding: 0).
+    ///   - invertAlpha: Whether the alpha channel should be inverted, such that the rounded rectangle is clear and the edges are blurred.
+    @_disfavoredOverload
+    public init(
+        cornerRadius: CGFloat,
+        blurRadius: CGFloat,
+        edgeConfigurations: [Edge: EdgeConfiguration] = [:],
+        invertAlpha: Bool = false
+    ) {
         self.cornerRadius = cornerRadius
         self.blurRadius = blurRadius
-        self.featherEdges = featherEdges
+        self.edgeConfigurations = edgeConfigurations
         self.invertAlpha = invertAlpha
     }
 
@@ -50,7 +94,6 @@ public struct RoundedRectangleMaskProvider: MaskProvider {
         autoreleasepool {
             let scaledCornerRadius = max(0, cornerRadius * scale)
             let scaledBlurRadius = max(0, blurRadius * scale)
-            let maskRect = getMaskRect(in: bounds, scale: scale)
 
             let totalExtent = CGRect(
                 x: 0,
@@ -59,12 +102,11 @@ public struct RoundedRectangleMaskProvider: MaskProvider {
                 height: max(1, Int(ceil(bounds.height * scale)))
             ).integral
 
-            let maskExtent = CGRect(
-                x: maskRect.origin.x * scale,
-                y: maskRect.origin.y * scale,
-                width: maskRect.width * scale,
-                height: maskRect.height * scale
-            ).integral
+            let (maskExtent, maskClipRect) = getMaskExtent(
+                in: totalExtent,
+                scale: scale,
+                scaledBlurRadius: scaledBlurRadius
+            )
 
             Self.roundedRectGen.setDefaults()
             Self.roundedRectGen.extent = maskExtent
@@ -80,7 +122,9 @@ public struct RoundedRectangleMaskProvider: MaskProvider {
             guard let blurredMask = Self.blurFilter.outputImage else { return nil }
 
             // Crop to the final size (in case it expands out of the needed frame)
-            let croppedMask = blurredMask.cropped(to: totalExtent)
+            let croppedMask = blurredMask
+                .cropped(to: maskClipRect)
+                .cropped(to: totalExtent)
 
             if invertAlpha {
                 guard let inverted = invertAlpha(croppedMask) else {
@@ -93,37 +137,117 @@ public struct RoundedRectangleMaskProvider: MaskProvider {
         }
     }
 
-    private func getMaskRect(in bounds: CGRect, scale: CGFloat) -> CGRect {
-        let insetFactor = 2 * blurRadius * scale
-        // outsetFactor ensures we expand enough to cover feather + corner smoothing
+    private func getMaskExtent(
+        in totalExtent: CGRect,
+        scale: CGFloat,
+        scaledBlurRadius: CGFloat
+    ) -> (extent: CGRect, clipRect: CGRect) {
+        let insetFactor = 2 * scaledBlurRadius
+
+        // outsetFactor ensures we expand enough to cover feather + corner radius
         let outsetFactor = insetFactor + max(insetFactor, cornerRadius)
 
         // Start by inseting so non-feathered edges move inward
-        var rect = bounds.insetBy(dx: insetFactor, dy: insetFactor)
+        var maskExtent = totalExtent.insetBy(dx: insetFactor, dy: insetFactor)
+        var clipRect = totalExtent
 
-        if !featherEdges.contains(.top) {
-            rect.size.height += outsetFactor
+        let top = edgeConfigurations[.top] ?? .default
+        let bottom = edgeConfigurations[.bottom] ?? .default
+        let leading = edgeConfigurations[.leading] ?? .default
+        let trailing = edgeConfigurations[.trailing] ?? .default
+
+        let scaledPadding = getPaddingInsets(
+            top: top,
+            bottom: bottom,
+            leading: leading,
+            trailing: trailing,
+            totalExtent: totalExtent,
+            scale: scale
+        )
+
+        if top.isFeathered {
+            maskExtent.size.height -= scaledPadding.top
+        } else {
+            maskExtent.size.height += outsetFactor
+            clipRect.size.height -= scaledPadding.top
         }
 
-        if !featherEdges.contains(.bottom) {
-            rect.origin.y -= outsetFactor
-            rect.size.height += outsetFactor
+        if bottom.isFeathered {
+            maskExtent.origin.y += scaledPadding.bottom
+            maskExtent.size.height -= scaledPadding.bottom
+        } else {
+            maskExtent.origin.y -= outsetFactor
+            maskExtent.size.height += outsetFactor
+            clipRect.origin.y += scaledPadding.bottom
+            clipRect.size.height -= scaledPadding.bottom
         }
 
-        if !featherEdges.contains(.leading) {
-            rect.origin.x -= outsetFactor
-            rect.size.width += outsetFactor
+        if leading.isFeathered {
+            maskExtent.origin.x += scaledPadding.leading
+            maskExtent.size.width -= scaledPadding.leading
+        } else {
+            maskExtent.origin.x -= outsetFactor
+            maskExtent.size.width += outsetFactor
+            clipRect.origin.x += scaledPadding.leading
+            clipRect.size.width -= scaledPadding.leading
         }
 
-        if !featherEdges.contains(.trailing) {
-            rect.size.width += outsetFactor
+        if trailing.isFeathered {
+            maskExtent.size.width -= scaledPadding.trailing
+        } else {
+            maskExtent.size.width += outsetFactor
+            clipRect.size.width -= scaledPadding.trailing
         }
 
         // Prevent negative dimensions (just in case)
-        if rect.width < 0 { rect.size.width = 0 }
-        if rect.height < 0 { rect.size.height = 0 }
+        if maskExtent.width < 0 { maskExtent.size.width = 0 }
+        if maskExtent.height < 0 { maskExtent.size.height = 0 }
 
-        return rect.integral
+        return (maskExtent, clipRect)
+    }
+
+    private func getPaddingInsets(
+        top: EdgeConfiguration,
+        bottom: EdgeConfiguration,
+        leading: EdgeConfiguration,
+        trailing: EdgeConfiguration,
+        totalExtent: CGRect,
+        scale: CGFloat
+    ) -> (top: CGFloat, bottom: CGFloat, leading: CGFloat, trailing: CGFloat) {
+        var topPadding: CGFloat = 0
+        var bottomPadding: CGFloat = 0
+        var leadingPadding: CGFloat = 0
+        var trailingPadding: CGFloat = 0
+
+        switch top.padding {
+        case let .points(points):
+            topPadding = points * scale
+        case let .percentage(percentage):
+            topPadding = totalExtent.height * percentage * scale
+        }
+
+        switch bottom.padding {
+        case let .points(points):
+            bottomPadding = points * scale
+        case let .percentage(percentage):
+            bottomPadding = totalExtent.height * percentage * scale
+        }
+
+        switch leading.padding {
+        case let .points(points):
+            leadingPadding = points * scale
+        case let .percentage(percentage):
+            leadingPadding = totalExtent.width * percentage * scale
+        }
+
+        switch trailing.padding {
+        case let .points(points):
+            trailingPadding = points * scale
+        case let .percentage(percentage):
+            trailingPadding = totalExtent.width * percentage * scale
+        }
+
+        return (topPadding, bottomPadding, leadingPadding, trailingPadding)
     }
 
     private func invertAlpha(_ image: CIImage) -> CIImage? {
