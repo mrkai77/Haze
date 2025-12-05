@@ -7,113 +7,61 @@
 
 import SwiftUI
 
-/// A protocol to ensure that both the iOS/macOS versions of `HazeEffect` provide the same API.
-@MainActor
-public protocol HazeEffectProtocol {
-    associatedtype Provider: MaskProvider
+#if os(iOS)
+public typealias PlatformViewRepresentable = UIViewRepresentable
+#elseif os(macOS)
+public typealias PlatformViewRepresentable = NSViewRepresentable
+#endif
 
+public struct HazeEffect<Provider>: PlatformViewRepresentable where Provider: MaskProvider {
+    /// The type of mask to use for the variable blur effect.
+    private let maskProvider: Provider
+    
+    /// The maximum blur radius to apply.
+    private let maxBlurRadius: CGFloat
+    
+    /// The scale factor used when rendering the mask image.
+    /// Lower values can improve performance at the cost of quality.
+    private let scale: CGFloat
+    
     /// Initializes a new `HazeEffect`.
     /// - Parameters:
     ///   - maskProvider: The type of mask to use for the variable blur effect.
     ///   - maxBlurRadius: The maximum blur radius to apply.
     ///   - scale: The scale factor used when rendering the mask image. Lower values can improve performance at the cost of quality.
-    init(
+    public init(
         maskProvider: Provider,
         maxBlurRadius: CGFloat,
-        scale: CGFloat
-    )
-}
-
+        scale: CGFloat = 0.5
+    ) {
+        self.maskProvider = maskProvider
+        self.maxBlurRadius = maxBlurRadius
+        self.scale = scale
+    }
+    
 #if os(iOS)
-/// A SwiftUI API for `UIHazeEffectView`.
-@MainActor
-public struct HazeEffect<Provider>: UIViewRepresentable, HazeEffectProtocol where Provider: MaskProvider {
-    /// The type of mask to use for the variable blur effect.
-    private let maskProvider: Provider
-
-    /// The maximum blur radius to apply.
-    private let maxBlurRadius: CGFloat
-
-    /// The scale factor used when rendering the mask image.
-    /// Lower values can improve performance at the cost of quality.
-    private let scale: CGFloat
-
-    public init(
-        maskProvider: Provider,
-        maxBlurRadius: CGFloat,
-        scale: CGFloat = 0.5
-    ) {
-        self.maskProvider = maskProvider
-        self.maxBlurRadius = maxBlurRadius
-        self.scale = scale
-    }
-
-    public func makeUIView(
-        context _: Context
-    ) -> UIHazeEffectView<Provider> {
-        let view = UIHazeEffectView(
-            maskProvider: maskProvider,
-            variableBlur: VariableBlurEngine(maxBlurRadius: maxBlurRadius),
-            scale: scale
-        )
-        return view
-    }
-
-    public func updateUIView(
-        _ view: UIHazeEffectView<Provider>,
-        context _: Context
-    ) {
-        view.setMaskProvider(to: maskProvider)
-        view.variableBlur.setMaxBlurRadius(to: maxBlurRadius)
-        view.setScale(to: scale)
-        view.renderFilter()
-    }
-}
-#else
-/// A SwiftUI API for `NSHazeEffectView`.
-public struct HazeEffect<Provider>: NSViewRepresentable, HazeEffectProtocol where Provider: MaskProvider {
-    /// The type of mask to use for the variable blur effect.
-    private let maskProvider: Provider
-
-    /// The maximum blur radius to apply.
-    private let maxBlurRadius: CGFloat
-
-    /// The scale factor used when rendering the mask image.
-    /// Lower values can improve performance at the cost of quality.
-    private let scale: CGFloat
-
-    public init(
-        maskProvider: Provider,
-        maxBlurRadius: CGFloat,
-        scale: CGFloat = 0.5
-    ) {
-        self.maskProvider = maskProvider
-        self.maxBlurRadius = maxBlurRadius
-        self.scale = scale
-    }
-
-    public func makeNSView(
-        context _: Context
-    ) -> NSHazeEffectView<Provider> {
-        let view = NSHazeEffectView(
-            maskProvider: maskProvider,
-            variableBlur: VariableBlurEngine(maxBlurRadius: maxBlurRadius),
-            scale: scale
-        )
-        return view
-    }
-
-    public func updateNSView(
-        _ view: NSHazeEffectView<Provider>,
-        context _: Context
-    ) {
-        view.setMaskProvider(to: maskProvider)
-        view.variableBlur.setMaxBlurRadius(to: maxBlurRadius)
-        view.setScale(to: scale)
-        view.renderFilter()
-    }
-}
+    public func makeUIView(context _: Context) -> HazeEffectView<Provider> { makeView() }
+    public func updateUIView(_ view: HazeEffectView<Provider>, context: Context) { updateView(view, context) }
+#elseif os(macOS)
+    public func makeNSView(context _: Context) -> HazeEffectView<Provider> { makeView() }
+    public func updateNSView(_ view: HazeEffectView<Provider>, context: Context) { updateView(view, context) }
 #endif
+    
+    private func makeView() -> HazeEffectView<Provider> {
+        HazeEffectView(
+            maskProvider: maskProvider,
+            variableBlur: VariableBlurEngine(maxBlurRadius: maxBlurRadius),
+            scale: scale
+        )
+    }
+    
+    private func updateView(_ view: HazeEffectView<Provider>, _ context: Context) {
+        view.setMaskProvider(to: maskProvider)
+        view.variableBlur.setMaxBlurRadius(to: maxBlurRadius)
+        view.setScale(to: scale)
+        view.renderFilter()
+    }
+}
 
 // MARK: - Previews
 
