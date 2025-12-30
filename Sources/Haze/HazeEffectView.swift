@@ -172,8 +172,12 @@ public final class HazeEffectView<Provider>: PlatformView where Provider: MaskPr
         #endif
 
         layer.masksToBounds = true
-        layer.setValue(true, forKey: "isEnabled")
         layer.setValue(true, forKey: "windowServerAware")
-        layer.setValue(true, forKey: "allowsInPlaceFiltering")
+        layer.setValue(false, forKey: "allowsInPlaceFiltering")
+        layer.setValue(true, forKey: "allowsGroupBlending")
+        layer.setValue(true, forKey: "allowsGroupOpacity")
+        layer.setValue(false, forKey: "allowsEdgeAntialiasing")
+        layer.setValue(true, forKey: "disablesOccludedBackdropBlurs")
+        layer.setValue(true, forKey: "ignoresOffscreenGroups")
     }
 }
