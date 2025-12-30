@@ -70,7 +70,7 @@ public struct EllipticMaskProvider: MaskProvider {
 
             Self.blurFilter.setDefaults()
             Self.blurFilter.inputImage = ciMask
-            Self.blurFilter.radius = Float(blurRadius * scale)
+            Self.blurFilter.radius = Float(blurRadius * scale) / 2.0
 
             guard let blurred = Self.blurFilter.outputImage else {
                 return nil
@@ -82,7 +82,7 @@ public struct EllipticMaskProvider: MaskProvider {
     }
 
     private func getEllipseRect(in bounds: CGRect, scale: CGFloat) -> CGRect {
-        let insetFactor = 2 * blurRadius * scale
+        let insetFactor = blurRadius * scale
         return bounds.insetBy(dx: insetFactor, dy: insetFactor)
     }
 }

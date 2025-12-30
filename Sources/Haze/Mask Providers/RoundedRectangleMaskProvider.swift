@@ -117,7 +117,7 @@ public struct RoundedRectangleMaskProvider: MaskProvider {
 
             Self.blurFilter.setDefaults()
             Self.blurFilter.inputImage = rounded
-            Self.blurFilter.radius = Float(scaledBlurRadius)
+            Self.blurFilter.radius = Float(scaledBlurRadius) / 2.0
 
             guard let blurredMask = Self.blurFilter.outputImage else { return nil }
 
@@ -142,7 +142,7 @@ public struct RoundedRectangleMaskProvider: MaskProvider {
         scale: CGFloat,
         scaledBlurRadius: CGFloat
     ) -> (extent: CGRect, clipRect: CGRect) {
-        let insetFactor = 2 * scaledBlurRadius
+        let insetFactor = scaledBlurRadius
 
         // outsetFactor ensures we expand enough to cover feather + corner radius
         let outsetFactor = insetFactor + max(insetFactor, cornerRadius)

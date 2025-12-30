@@ -57,7 +57,7 @@ public struct ShapeMaskProvider: MaskProvider {
                 height: max(1, Int(ceil(bounds.height * scale)))
             ).integral
 
-            let insetAmount = 2 * blurRadius
+            let insetAmount = blurRadius
             let shapeRect = bounds.insetBy(dx: insetAmount, dy: insetAmount).integral
 
             let colorSpace = CGColorSpaceCreateDeviceGray()
@@ -108,7 +108,7 @@ public struct ShapeMaskProvider: MaskProvider {
 
             Self.blurFilter.setDefaults()
             Self.blurFilter.inputImage = ciMask
-            Self.blurFilter.radius = Float(blurRadius * scale)
+            Self.blurFilter.radius = Float(blurRadius * scale) / 2.0
 
             guard let blurred = Self.blurFilter.outputImage else {
                 return nil
