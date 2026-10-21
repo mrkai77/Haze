@@ -13,6 +13,16 @@ public typealias PlatformView = UIView
 public typealias PlatformView = NSView
 #endif
 
+enum HazeRenderer {
+    /// One context for every view, as creating a Metal-backed context is
+    /// expensive, and a context is thread-safe and meant to be reused
+    static let context: CIContext = if let device = MTLCreateSystemDefaultDevice() {
+        .init(mtlDevice: device, options: [.cacheIntermediates: true])
+    } else {
+        .init(options: [.cacheIntermediates: true])
+    }
+}
+
 public final class HazeEffectView<Provider>: PlatformView where Provider: MaskProvider {
     /// The mask provider used by this variable blur.
     public private(set) var maskProvider: Provider
@@ -26,12 +36,6 @@ public final class HazeEffectView<Provider>: PlatformView where Provider: MaskPr
 
     private var lastFrame: CGRect = .zero
     private var needsToRedrawMask: Bool = true
-
-    private let ciContext: CIContext = if let device = MTLCreateSystemDefaultDevice() {
-        .init(mtlDevice: device, options: [.cacheIntermediates: true])
-    } else {
-        .init(options: [.cacheIntermediates: true])
-    }
 
     #if os(iOS)
     override public class var layerClass: AnyClass {
@@ -144,7 +148,7 @@ public final class HazeEffectView<Provider>: PlatformView where Provider: MaskPr
         if let image = maskProvider.draw(
             in: bounds,
             scale: scale,
-            in: ciContext
+            in: HazeRenderer.context
         ) {
             variableBlur.setMaskImage(to: image)
         }
